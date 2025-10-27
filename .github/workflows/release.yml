@@ -4,6 +4,9 @@ on:
   release:
     types: [created]
 
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build for ${{ matrix.os }} - ${{ matrix.arch }}
@@ -98,7 +101,9 @@ jobs:
   create-release-assets:
     needs: build
     runs-on: ubuntu-latest
-    
+    permissions:
+      contents: write
+      
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
