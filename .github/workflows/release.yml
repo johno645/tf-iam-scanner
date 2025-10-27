@@ -66,9 +66,8 @@ jobs:
           GOOS: ${{ matrix.platform == 'linux/amd64' && 'linux' || matrix.platform == 'linux/arm64' && 'linux' || matrix.platform == 'darwin/amd64' && 'darwin' || matrix.platform == 'darwin/arm64' && 'darwin' || 'windows' }}
           GOARCH: ${{ matrix.platform == 'linux/amd64' && 'amd64' || matrix.platform == 'linux/arm64' && 'arm64' || matrix.platform == 'darwin/amd64' && 'amd64' || matrix.platform == 'darwin/arm64' && 'arm64' || 'amd64' }}
         run: |
-          go build -ldflags="-s -w" -o tf-iam-scanner${{ matrix.extension }} ./...
           mkdir -p release
-          mv tf-iam-scanner${{ matrix.extension }} release/tf-iam-scanner-${{ matrix.platform }}${{ matrix.extension }}
+          go build -ldflags="-s -w" -o release/tf-iam-scanner-${{ matrix.platform }}${{ matrix.extension }} ./...
 
       - name: Create checksums
         if: runner.os != 'Windows'
