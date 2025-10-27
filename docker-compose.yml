@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  tf-iam-scanner:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: tf-iam-scanner:latest
+    volumes:
+      # Mount terraform directory to scan
+      - ./terraform:/terraform:ro
+      # Mount output directory
+      - ./output:/output
+    command:
+      - --path
+      - /terraform
+      - --output
+      - /output/policy.json
+    environment:
+      - TZ=UTC
+

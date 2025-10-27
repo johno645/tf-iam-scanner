@@ -1,0 +1,47 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Build artifacts
+tf-iam-scanner
+tf-iam-scanner-*
+*.exe
+*.dll
+*.so
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test outputs
+*-policy.json
+*-policy.yaml
+*-policy.tf
+test-*.json
+test-*.yaml
+
+# GitHub Actions
+.github
+
+# Documentation (optional - you might want to include this)
+# README.md
+# ARCHITECTURE.md
+
+# Scripts
+*.sh
+
+# Go
+*.test
+*.out
+
+# Build directories
+release/
+artifacts/
+
