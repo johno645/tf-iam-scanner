@@ -1,0 +1,117 @@
+name: Build and Release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    name: Build for ${{ matrix.os }} - ${{ matrix.arch }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            arch: amd64
+            platform: linux/amd64
+            name: tf-iam-scanner
+            extension: ""
+          - os: ubuntu-latest
+            arch: arm64
+            platform: linux/arm64
+            name: tf-iam-scanner
+            extension: ""
+          - os: macos-latest
+            arch: amd64
+            platform: darwin/amd64
+            name: tf-iam-scanner
+            extension: ""
+          - os: macos-latest
+            arch: arm64
+            platform: darwin/arm64
+            name: tf-iam-scanner
+            extension: ""
+          - os: windows-latest
+            arch: amd64
+            platform: windows/amd64
+            name: tf-iam-scanner
+            extension: ".exe"
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run tests
+        run: go test -v ./...
+
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.platform == 'linux/amd64' && 'linux' || matrix.platform == 'linux/arm64' && 'linux' || matrix.platform == 'darwin/amd64' && 'darwin' || matrix.platform == 'darwin/arm64' && 'darwin' || 'windows' }}
+          GOARCH: ${{ matrix.platform == 'linux/amd64' && 'amd64' || matrix.platform == 'linux/arm64' && 'arm64' || matrix.platform == 'darwin/amd64' && 'amd64' || matrix.platform == 'darwin/arm64' && 'arm64' || 'amd64' }}
+        run: |
+          go build -ldflags="-s -w" -o tf-iam-scanner${{ matrix.extension }} ./...
+          mkdir -p release
+          mv tf-iam-scanner${{ matrix.extension }} release/tf-iam-scanner-${{ matrix.platform }}${{ matrix.extension }}
+
+      - name: Create checksums
+        if: runner.os != 'Windows'
+        working-directory: release
+        run: sha256sum tf-iam-scanner-${{ matrix.platform }}${{ matrix.extension }} > tf-iam-scanner-${{ matrix.platform }}${{ matrix.extension }}.sha256
+
+      - name: Create checksums (Windows)
+        if: runner.os == 'Windows'
+        working-directory: release
+        run: CertUtil -hashfile tf-iam-scanner-${{ matrix.platform }}${{ matrix.extension }} SHA256 > tf-iam-scanner-${{ matrix.platform }}${{ matrix.extension }}.sha256
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: tf-iam-scanner-${{ matrix.platform }}
+          path: release/*
+
+  create-release-assets:
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Prepare release files
+        run: |
+          mkdir -p release-files
+          find artifacts -type f -name "tf-iam-scanner-*" -not -name "*.sha256" -exec cp {} release-files/ \;
+          find artifacts -type f -name "*.sha256" -exec cp {} release-files/ \;
+
+      - name: Create archive
+        run: |
+          cd release-files
+          tar czf ../release-assets.tar.gz *
+          
+      - name: Upload to release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: release-files/*
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
