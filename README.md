@@ -14,6 +14,8 @@ A Go CLI tool that scans Terraform files and generates minimum IAM policies requ
 
 ## Installation
 
+### From Source
+
 Build the tool:
 ```bash
 go mod download
@@ -23,6 +25,29 @@ go build -o tf-iam-scanner
 Or install globally:
 ```bash
 go install
+```
+
+### Using Docker
+
+Build the Docker image:
+```bash
+docker build -t tf-iam-scanner .
+```
+
+Run with Docker:
+```bash
+# Mount your terraform directory and output directory
+docker run --rm \
+  -v $(pwd)/terraform:/terraform:ro \
+  -v $(pwd)/output:/output \
+  tf-iam-scanner \
+  --path /terraform --output /output/policy.json
+```
+
+Or use Docker Compose:
+```bash
+# Edit docker-compose.yml to point to your terraform directory
+docker-compose up
 ```
 
 ## Usage
