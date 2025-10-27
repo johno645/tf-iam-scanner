@@ -1,5 +1,6 @@
 # Binaries
 tf-iam-scanner
+tf-iam-scanner-*
 *.exe
 *.exe~
 *.dll
@@ -40,6 +41,9 @@ test-*.yaml
 test-*.tf
 comprehensive*.json
 backend-policy.json
+
+# Scripts
+push-to-github.sh
 
 # Backup files
 *.backup
