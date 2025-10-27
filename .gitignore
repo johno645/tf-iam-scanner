@@ -1,0 +1,48 @@
+# Binaries
+tf-iam-scanner
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.out
+
+# Go workspace file
+go.work
+
+# OS specific
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE specific
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Test output
+*-policy.json
+*-policy.yaml
+*-policy.tf
+test-*.json
+test-*.yaml
+test-*.tf
+comprehensive*.json
+backend-policy.json
+
+# Backup files
+*.backup
+*.bak
+*.tmp
+
