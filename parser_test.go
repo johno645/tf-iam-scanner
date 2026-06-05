@@ -608,6 +608,115 @@ func TestDeterministicOutput(t *testing.T) {
 	}
 }
 
+// --- Plan File Tests ---
+
+func TestParsePlanFile(t *testing.T) {
+	result, err := parsePlanFile("test-fixtures/plan/tfplan.json")
+	if err != nil {
+		t.Fatalf("Error parsing plan file: %v", err)
+	}
+
+	if len(result.Resources) == 0 {
+		t.Error("Expected to find resources in plan file")
+	}
+
+	// Should find resources from root module (3) + child_modules (2)
+	if len(result.Resources) < 5 {
+		t.Errorf("Expected at least 5 resources, got %d", len(result.Resources))
+	}
+
+	// Check for module resources
+	foundVPC := false
+	foundSubnet := false
+	for _, r := range result.Resources {
+		if r.Type == "aws_vpc" {
+			foundVPC = true
+		}
+		if r.Type == "aws_subnet" {
+			foundSubnet = true
+		}
+	}
+	if !foundVPC {
+		t.Error("Expected to find aws_vpc from module in plan file")
+	}
+	if !foundSubnet {
+		t.Error("Expected to find aws_subnet from module in plan file")
+	}
+
+	// Should have data sources
+	if len(result.DataSources) < 1 {
+		t.Error("Expected at least 1 data source in plan file")
+	}
+
+	foundCallerIdentity := false
+	for _, ds := range result.DataSources {
+		if ds.Type == "aws_caller_identity" {
+			foundCallerIdentity = true
+		}
+	}
+	if !foundCallerIdentity {
+		t.Error("Expected data.aws_caller_identity in plan file")
+	}
+}
+
+func TestParsePlanFileModuleSources(t *testing.T) {
+	result, err := parsePlanFile("test-fixtures/plan/tfplan.json")
+	if err != nil {
+		t.Fatalf("Error parsing plan file: %v", err)
+	}
+
+	// Should extract local module source from configuration
+	foundModule := false
+	for _, mod := range result.Modules {
+		if mod == "./modules/vpc" {
+			foundModule = true
+		}
+	}
+	if !foundModule {
+		t.Errorf("Expected to find './modules/vpc' module source, got %v", result.Modules)
+	}
+}
+
+func TestPlanFilePolicyGeneration(t *testing.T) {
+	result, err := parsePlanFile("test-fixtures/plan/tfplan.json")
+	if err != nil {
+		t.Fatalf("Error parsing plan file: %v", err)
+	}
+
+	policy, err := generateIAMPolicy(result, false, FormatJSON, true)
+	if err != nil {
+		t.Fatalf("Error generating policy: %v", err)
+	}
+
+	// Plan has S3, Lambda, IAM, VPC, Subnet resources
+	if !strings.Contains(policy, "s3:CreateBucket") {
+		t.Error("Expected s3:CreateBucket from plan")
+	}
+	if !strings.Contains(policy, "lambda:CreateFunction") {
+		t.Error("Expected lambda:CreateFunction from plan")
+	}
+	if !strings.Contains(policy, "iam:CreateRole") {
+		t.Error("Expected iam:CreateRole from plan")
+	}
+	if !strings.Contains(policy, "ec2:CreateVpc") {
+		t.Error("Expected ec2:CreateVpc from module in plan")
+	}
+
+	// Data source aws_caller_identity should contribute sts:GetCallerIdentity
+	if !strings.Contains(policy, "sts:GetCallerIdentity") {
+		t.Error("Expected sts:GetCallerIdentity from data source in plan")
+	}
+
+	// Least-privilege should produce multiple statements
+	var iamPolicy IAMPolicy
+	if err := json.Unmarshal([]byte(policy), &iamPolicy); err != nil {
+		t.Fatalf("Generated policy is not valid JSON: %v", err)
+	}
+	if len(iamPolicy.Statement) < 4 {
+		t.Errorf("Expected >=4 statements in least-privilege mode, got %d", len(iamPolicy.Statement))
+	}
+}
+
 // Test helper function
 func TestMain(m *testing.M) {
 	// Run tests

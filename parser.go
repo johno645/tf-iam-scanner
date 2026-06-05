@@ -16,6 +16,8 @@ import (
 //go:embed permissions.json
 var embeddedPermissionsDB []byte
 
+//go:generate go run cmd/generate-permissions/main.go
+
 // Resource represents a Terraform resource or data source
 type Resource struct {
 	Type         string
@@ -437,4 +439,130 @@ func getRequiredPermissions(resourceType string) []string {
 	}
 
 	return []string{}
+}
+
+// --- Terraform Plan JSON parsing ---
+
+// planFile represents the top-level structure of a terraform show -json output.
+type planFile struct {
+	FormatVersion    string           `json:"format_version"`
+	TerraformVersion string           `json:"terraform_version"`
+	PlannedValues    *planState       `json:"planned_values"`
+	ResourceChanges  []planResourceChange `json:"resource_changes"`
+	Configuration    *planConfig      `json:"configuration"`
+}
+
+type planState struct {
+	RootModule planModule `json:"root_module"`
+}
+
+type planModule struct {
+	Resources    []planResource      `json:"resources"`
+	ChildModules []planChildModule   `json:"child_modules"`
+}
+
+type planChildModule struct {
+	Address   string         `json:"address"`
+	Resources []planResource `json:"resources"`
+}
+
+type planResource struct {
+	Address      string `json:"address"`
+	Mode         string `json:"mode"`
+	Type         string `json:"type"`
+	Name         string `json:"name"`
+	ProviderName string `json:"provider_name"`
+}
+
+type planResourceChange struct {
+	Address      string             `json:"address"`
+	Mode         string             `json:"mode"`
+	Type         string             `json:"type"`
+	Name         string             `json:"name"`
+	ProviderName string             `json:"provider_name"`
+	Change       planChangeDetail   `json:"change"`
+}
+
+type planChangeDetail struct {
+	Actions []string `json:"actions"`
+}
+
+type planConfig struct {
+	RootModule planConfigModule `json:"root_module"`
+}
+
+type planConfigModule struct {
+	Resources   []planResource            `json:"resources"`
+	ModuleCalls map[string]planModuleCall `json:"module_calls"`
+}
+
+type planModuleCall struct {
+	Source string `json:"source"`
+}
+
+// parsePlanFile reads a terraform show -json plan file and extracts resources,
+// data sources, and module sources.
+func parsePlanFile(filePath string) (*ParseResult, error) {
+	// Load permissions database
+	if permissionsDB == nil {
+		if err := loadPermissionsDB(); err != nil {
+			return nil, err
+		}
+	}
+
+	data, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("error reading plan file: %w", err)
+	}
+
+	var plan planFile
+	if err := json.Unmarshal(data, &plan); err != nil {
+		return nil, fmt.Errorf("error parsing plan JSON: %w", err)
+	}
+
+	result := &ParseResult{
+		Resources:   []Resource{},
+		DataSources: []Resource{},
+	}
+
+	// Extract from resource_changes — this is the authoritative list with
+	// the planned actions for each resource.
+	for _, rc := range plan.ResourceChanges {
+		if !strings.HasPrefix(rc.ProviderName, "registry.terraform.io/hashicorp/aws") &&
+			!strings.HasPrefix(rc.Type, "aws_") {
+			continue
+		}
+
+		resource := Resource{
+			Type:         rc.Type,
+			Name:         rc.Name,
+			Provider:     "aws",
+			ResourceType: rc.Type,
+		}
+
+		if rc.Mode == "data" {
+			result.DataSources = append(result.DataSources, resource)
+		} else {
+			result.Resources = append(result.Resources, resource)
+		}
+	}
+
+	// Extract module sources from configuration
+	if plan.Configuration != nil {
+		extractPlanModules(&plan, result)
+	}
+
+	return result, nil
+}
+
+// extractPlanModules extracts module source paths from the plan configuration.
+func extractPlanModules(plan *planFile, result *ParseResult) {
+	if plan.Configuration == nil {
+		return
+	}
+	for _, call := range plan.Configuration.RootModule.ModuleCalls {
+		if isLocalModuleSource(call.Source) {
+			result.Modules = append(result.Modules, call.Source)
+		}
+	}
 }

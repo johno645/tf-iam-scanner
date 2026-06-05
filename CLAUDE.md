@@ -12,7 +12,7 @@ go build -o tf-iam-scanner
 go test -v ./...
 
 # Run a single test
-go test -v -run TestParseSimpleTerraformFile
+go test -v -run TestParsePlanFile
 
 # Lint (uses golangci-lint, same as CI)
 golangci-lint run --timeout=5m
@@ -23,7 +23,26 @@ jq empty permissions.json
 # Docker build and run
 docker build -t tf-iam-scanner .
 docker run --rm -v $(pwd)/test-fixtures:/terraform:ro tf-iam-scanner --path /terraform
+
+# Generate plan-based policy (two-step workflow)
+terraform plan -out=tfplan
+terraform show -json tfplan > plan.json
+tf-iam-scanner --plan-file plan.json --least-privilege
 ```
+
+## Two Input Modes
+
+The tool supports two input modes:
+
+1. **`--path <dir>`** — Scans `.tf` files in a directory using HCL parsing. Follows local module sources (`./`, `../`). Good for quick scans without running Terraform.
+
+2. **`--plan-file <json>`** — Parses a `terraform show -json` plan output. This is the recommended mode for production use because:
+   - All modules are resolved by Terraform — no manual module resolution needed
+   - Resources from `count`/`for_each` are fully expanded
+   - The exact resource types are pulled from the provider's plan
+   - Works with any Terraform configuration regardless of complexity
+
+   The plan file mode is mutually exclusive with `--path`; if both are provided, `--plan-file` takes precedence.
 
 ## Architecture
 
@@ -32,7 +51,7 @@ This is a single-package Go CLI (`package main`) — everything lives at the rep
 ### Core Files
 
 - **`main.go`** — CLI entry point using `cobra`. Defines all flags (`--path`, `--output`, `--include-state-backend` (default: `true`), `--least-privilege`, `--format`), validates them, calls the parser + policy generator, and writes output. Summary info goes to stderr, policy output goes to stdout (or `--output` file).
-- **`parser.go`** — HCL parsing via `hashicorp/hcl/v2`. Recursively walks a directory for `.tf` files and follows local module sources (`./modules/...`). Primary parser uses `hclsyntax.ParseConfig`; if that fails, falls back to line-by-line string parsing (`extractWithSimpleParsing`). Also detects `terraform.tfstate` files for backend inference. `ParseResult` includes `Warnings` (non-fatal parse errors) and `Modules` (local module source paths). Structures: `Resource`, `BackendConfig`, `ParseResult`, `PermissionMap`.
+- **`parser.go`** — Two parsers: (1) HCL parsing via `hashicorp/hcl/v2` for `.tf` files, recursively following local module sources; (2) `parsePlanFile()` for `terraform show -json` output, which extracts resources from `resource_changes` and `planned_values` (including child modules). HCL parser uses `hclsyntax.ParseConfig` with a line-by-line fallback (`extractWithSimpleParsing`). `ParseResult` includes `Warnings` (non-fatal parse errors) and `Modules` (local module source paths). Structures: `Resource`, `BackendConfig`, `ParseResult`, `PermissionMap`, plus plan-specific JSON structs (`planFile`, `planResourceChange`, etc.).
 - **`policy.go`** — IAM policy generation. Collects actions from parsed resources (full permissions for resources, read-only filtering via `isReadOnlyAction()` for data sources). Supports three output formats: JSON, YAML, Terraform HCL. Implements action grouping by service (individual actions only, never wildcarded) and least-privilege mode (separate statements per service with ARNs constructed from `resource_types` in the permissions DB via `constructARNPattern()`). Always includes `sts:GetCallerIdentity` when AWS resources are present.
 - **`permissions.json`** — Embedded at build time via `//go:embed`. Maps ~ 120 AWS resource types and data sources (e.g., `aws_s3_bucket`, `data.aws_caller_identity`) to their required IAM actions and `resource_types` (used for ARN construction). This is the source of truth for permission mappings.
 

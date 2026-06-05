@@ -12,6 +12,7 @@ import (
 var (
 	pathFlag               string
 	outputFlag             string
+	planFileFlag           string
 	includeStateBackendFlag bool
 	leastPrivilegeFlag     bool
 	formatFlag             string
@@ -20,29 +21,32 @@ var (
 var rootCmd = &cobra.Command{
 	Use:   "tf-iam-scanner",
 	Short: "Scan Terraform files and generate minimum IAM policies",
-	Long: `A tool that scans Terraform files, extracts AWS resources and data sources,
-and generates the minimum IAM policy JSON required for those resources.
+	Long: `A tool that scans Terraform files or a terraform plan JSON and generates
+the minimum IAM policy required to deploy those AWS resources.
 
-This tool uses proper HCL parsing to extract resources and generates IAM policies
-with different output formats and granularity options.`,
+Supports two input modes:
+  1. --path <dir>      Scan .tf files in a directory (HCL parsing + local modules)
+  2. --plan-file <json> Parse a terraform show -json output (all modules resolved)
+
+Output formats: json, yaml, terraform
+
+Example with plan file:
+  terraform plan -out=tfplan
+  terraform show -json tfplan > plan.json
+  tf-iam-scanner --plan-file plan.json --least-privilege`,
 	Run: runScanner,
 }
 
 func init() {
 	rootCmd.Flags().StringVarP(&pathFlag, "path", "p", ".", "Path to directory containing Terraform files")
 	rootCmd.Flags().StringVarP(&outputFlag, "output", "o", "", "Output file path for the IAM policy (default: stdout)")
+	rootCmd.Flags().StringVar(&planFileFlag, "plan-file", "", "Path to terraform show -json plan file (alternative to --path)")
 	rootCmd.Flags().BoolVar(&includeStateBackendFlag, "include-state-backend", true, "Include permissions for Terraform state backend operations (use --include-state-backend=false to exclude)")
 	rootCmd.Flags().BoolVar(&leastPrivilegeFlag, "least-privilege", false, "Generate separate statements per service with specific resource ARNs")
 	rootCmd.Flags().StringVarP(&formatFlag, "format", "f", "json", "Output format (json, yaml, terraform)")
 }
 
 func runScanner(cmd *cobra.Command, args []string) {
-	// Validate path
-	if pathFlag == "" {
-		fmt.Fprintf(os.Stderr, "Error: path is required\n")
-		os.Exit(1)
-	}
-
 	// Validate format
 	validFormats := map[string]bool{"json": true, "yaml": true, "terraform": true}
 	if !validFormats[formatFlag] {
@@ -50,14 +54,28 @@ func runScanner(cmd *cobra.Command, args []string) {
 		os.Exit(1)
 	}
 
-	// Parse format
 	format := OutputFormat(formatFlag)
 
-	// Parse Terraform files (with module resolution)
-	result, err := parseTerraformFiles(pathFlag)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error parsing Terraform files: %v\n", err)
-		os.Exit(1)
+	// Parse input (plan file takes precedence over path)
+	var result *ParseResult
+	var err error
+
+	if planFileFlag != "" {
+		result, err = parsePlanFile(planFileFlag)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error parsing plan file: %v\n", err)
+			os.Exit(1)
+		}
+	} else {
+		if pathFlag == "" {
+			fmt.Fprintf(os.Stderr, "Error: either --path or --plan-file is required\n")
+			os.Exit(1)
+		}
+		result, err = parseTerraformFiles(pathFlag)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error parsing Terraform files: %v\n", err)
+			os.Exit(1)
+		}
 	}
 
 	if len(result.Resources) == 0 && len(result.DataSources) == 0 {
