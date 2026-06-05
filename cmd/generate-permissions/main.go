@@ -192,7 +192,7 @@ func main() {
 		fmt.Fprintf(os.Stderr, "Error downloading schema: %v\n", err)
 		os.Exit(1)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	zipData, err := io.ReadAll(resp.Body)
 	if err != nil {
@@ -311,7 +311,7 @@ func readSchemaFromZip(f *zip.File) (*Schema, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rc.Close()
+	defer func() { _ = rc.Close() }()
 
 	var schema Schema
 	if err := json.NewDecoder(rc).Decode(&schema); err != nil {
@@ -327,7 +327,7 @@ func writeOutput(permissions map[string]PermissionEntry) error {
 	if err != nil {
 		return err
 	}
-	defer outFile.Close()
+	defer func() { _ = outFile.Close() }()
 
 	encoder := json.NewEncoder(outFile)
 	encoder.SetIndent("", "  ")

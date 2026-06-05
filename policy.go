@@ -483,7 +483,7 @@ func generateTerraformOutput(statements []IAMStatement) string {
 
 	for i, statement := range statements {
 		sb.WriteString("  statement {\n")
-		sb.WriteString(fmt.Sprintf("    effect = \"%s\"\n", statement.Effect))
+		fmt.Fprintf(&sb, "    effect = \"%s\"\n", statement.Effect)
 
 		// Handle Action (can be string or array)
 		switch v := statement.Action.(type) {
@@ -491,12 +491,12 @@ func generateTerraformOutput(statements []IAMStatement) string {
 			if len(v) > 0 {
 				sb.WriteString("    actions = [\n")
 				for _, action := range v {
-					sb.WriteString(fmt.Sprintf("      \"%s\",\n", action))
+					fmt.Fprintf(&sb, "      \"%s\",\n", action)
 				}
 				sb.WriteString("    ]\n")
 			}
 		case string:
-			sb.WriteString(fmt.Sprintf("    actions = [\"%s\"]\n", v))
+			fmt.Fprintf(&sb, "    actions = [\"%s\"]\n", v)
 		}
 
 		// Handle Resource
@@ -505,12 +505,12 @@ func generateTerraformOutput(statements []IAMStatement) string {
 			if len(v) > 0 {
 				sb.WriteString("    resources = [\n")
 				for _, resource := range v {
-					sb.WriteString(fmt.Sprintf("      \"%s\",\n", resource))
+					fmt.Fprintf(&sb, "      \"%s\",\n", resource)
 				}
 				sb.WriteString("    ]\n")
 			}
 		case string:
-			sb.WriteString(fmt.Sprintf("    resources = [\"%s\"]\n", v))
+			fmt.Fprintf(&sb, "    resources = [\"%s\"]\n", v)
 		}
 
 		sb.WriteString("  }")

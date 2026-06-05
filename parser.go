@@ -101,7 +101,7 @@ func scanDir(dirPath string, result *ParseResult, visited map[string]bool) {
 	}
 	visited[cleanPath] = true
 
-	filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+	_ = filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			result.Warnings = append(result.Warnings,
 				fmt.Sprintf("Error accessing %s: %v", path, err))
