@@ -4,10 +4,13 @@
       "ec2:RunInstances",
       "ec2:DescribeInstances",
       "ec2:TerminateInstances",
+      "ec2:StartInstances",
+      "ec2:StopInstances",
       "ec2:ModifyInstanceAttribute",
       "ec2:DescribeInstanceStatus",
       "ec2:DescribeImages",
-      "ec2:DescribeInstanceTypes"
+      "ec2:DescribeInstanceTypes",
+      "iam:PassRole"
     ],
     "resource_types": ["instance"]
   },
@@ -17,6 +20,10 @@
       "s3:DeleteBucket",
       "s3:GetBucketLocation",
       "s3:GetBucketVersioning",
+      "s3:GetBucketTagging",
+      "s3:PutBucketTagging",
+      "s3:GetBucketAcl",
+      "s3:PutBucketAcl",
       "s3:ListBucket"
     ],
     "resource_types": ["bucket"]
@@ -43,6 +50,51 @@
     ],
     "resource_types": []
   },
+  "aws_s3_bucket_notification": {
+    "actions": [
+      "s3:PutBucketNotification",
+      "s3:GetBucketNotification"
+    ],
+    "resource_types": []
+  },
+  "aws_s3_bucket_cors": {
+    "actions": [
+      "s3:PutBucketCors",
+      "s3:GetBucketCors",
+      "s3:DeleteBucketCors"
+    ],
+    "resource_types": []
+  },
+  "aws_s3_bucket_lifecycle_configuration": {
+    "actions": [
+      "s3:PutBucketLifecycleConfiguration",
+      "s3:GetBucketLifecycleConfiguration"
+    ],
+    "resource_types": []
+  },
+  "aws_s3_bucket_logging": {
+    "actions": [
+      "s3:PutBucketLogging",
+      "s3:GetBucketLogging"
+    ],
+    "resource_types": []
+  },
+  "aws_s3_bucket_object": {
+    "actions": [
+      "s3:PutObject",
+      "s3:GetObject",
+      "s3:DeleteObject",
+      "s3:ListBucket"
+    ],
+    "resource_types": []
+  },
+  "aws_s3_bucket_server_side_encryption_configuration": {
+    "actions": [
+      "s3:PutEncryptionConfiguration",
+      "s3:GetEncryptionConfiguration"
+    ],
+    "resource_types": []
+  },
   "aws_iam_role": {
     "actions": [
       "iam:CreateRole",
@@ -52,7 +104,10 @@
       "iam:UpdateAssumeRolePolicy",
       "iam:UpdateRole",
       "iam:TagRole",
-      "iam:UntagRole"
+      "iam:UntagRole",
+      "iam:PassRole",
+      "iam:PutRolePermissionsBoundary",
+      "iam:DeleteRolePermissionsBoundary"
     ],
     "resource_types": ["role"]
   },
@@ -79,7 +134,9 @@
       "iam:ListPolicies",
       "iam:CreatePolicyVersion",
       "iam:DeletePolicyVersion",
-      "iam:ListPolicyVersions"
+      "iam:ListPolicyVersions",
+      "iam:TagPolicy",
+      "iam:UntagPolicy"
     ],
     "resource_types": ["policy"]
   },
@@ -88,7 +145,9 @@
       "iam:CreateUser",
       "iam:DeleteUser",
       "iam:GetUser",
-      "iam:ListUsers"
+      "iam:ListUsers",
+      "iam:TagUser",
+      "iam:UntagUser"
     ],
     "resource_types": ["user"]
   },
@@ -96,7 +155,10 @@
     "actions": [
       "iam:CreateInstanceProfile",
       "iam:DeleteInstanceProfile",
-      "iam:GetInstanceProfile"
+      "iam:GetInstanceProfile",
+      "iam:AddRoleToInstanceProfile",
+      "iam:RemoveRoleFromInstanceProfile",
+      "iam:PassRole"
     ],
     "resource_types": ["instance-profile"]
   },
@@ -112,7 +174,11 @@
       "rds:CreateDBInstance",
       "rds:DeleteDBInstance",
       "rds:DescribeDBInstances",
-      "rds:ModifyDBInstance"
+      "rds:ModifyDBInstance",
+      "rds:AddTagsToResource",
+      "rds:ListTagsForResource",
+      "rds:CreateDBSnapshot",
+      "rds:DeleteDBSnapshot"
     ],
     "resource_types": ["db"]
   },
@@ -121,9 +187,32 @@
       "rds:CreateDBCluster",
       "rds:DeleteDBCluster",
       "rds:DescribeDBClusters",
-      "rds:ModifyDBCluster"
+      "rds:ModifyDBCluster",
+      "rds:AddTagsToResource",
+      "rds:ListTagsForResource"
     ],
     "resource_types": ["cluster"]
+  },
+  "aws_db_instance": {
+    "actions": [
+      "rds:CreateDBInstance",
+      "rds:DeleteDBInstance",
+      "rds:DescribeDBInstances",
+      "rds:ModifyDBInstance",
+      "rds:AddTagsToResource",
+      "rds:ListTagsForResource",
+      "rds:CreateDBSnapshot",
+      "rds:DeleteDBSnapshot"
+    ],
+    "resource_types": ["db"]
+  },
+  "aws_db_subnet_group": {
+    "actions": [
+      "rds:CreateDBSubnetGroup",
+      "rds:DeleteDBSubnetGroup",
+      "rds:DescribeDBSubnetGroups"
+    ],
+    "resource_types": ["subgrp"]
   },
   "aws_lambda_function": {
     "actions": [
@@ -134,7 +223,12 @@
       "lambda:UpdateFunctionCode",
       "lambda:UpdateFunctionConfiguration",
       "lambda:AddPermission",
-      "lambda:RemovePermission"
+      "lambda:RemovePermission",
+      "lambda:PutFunctionEventInvokeConfig",
+      "lambda:DeleteFunctionEventInvokeConfig",
+      "lambda:TagResource",
+      "lambda:UntagResource",
+      "iam:PassRole"
     ],
     "resource_types": ["function"]
   },
@@ -146,12 +240,23 @@
     ],
     "resource_types": []
   },
+  "aws_lambda_event_source_mapping": {
+    "actions": [
+      "lambda:CreateEventSourceMapping",
+      "lambda:DeleteEventSourceMapping",
+      "lambda:GetEventSourceMapping",
+      "lambda:UpdateEventSourceMapping"
+    ],
+    "resource_types": []
+  },
   "aws_api_gateway_rest_api": {
     "actions": [
       "apigateway:CreateRestApi",
       "apigateway:DeleteRestApi",
       "apigateway:GetRestApi",
-      "apigateway:PutRestApi"
+      "apigateway:PutRestApi",
+      "apigateway:UpdateRestApi",
+      "apigateway:TagResource"
     ],
     "resource_types": ["restapis"]
   },
@@ -159,7 +264,8 @@
     "actions": [
       "apigateway:CreateResource",
       "apigateway:DeleteResource",
-      "apigateway:GetResource"
+      "apigateway:GetResource",
+      "apigateway:UpdateResource"
     ],
     "resource_types": []
   },
@@ -179,12 +285,51 @@
     ],
     "resource_types": []
   },
+  "aws_api_gateway_stage": {
+    "actions": [
+      "apigateway:CreateStage",
+      "apigateway:DeleteStage",
+      "apigateway:UpdateStage",
+      "apigateway:GetStage"
+    ],
+    "resource_types": []
+  },
+  "aws_api_gateway_v2_api": {
+    "actions": [
+      "apigatewayv2:CreateApi",
+      "apigatewayv2:DeleteApi",
+      "apigatewayv2:GetApi",
+      "apigatewayv2:UpdateApi",
+      "apigatewayv2:TagResource"
+    ],
+    "resource_types": ["apis"]
+  },
+  "aws_api_gateway_v2_route": {
+    "actions": [
+      "apigatewayv2:CreateRoute",
+      "apigatewayv2:DeleteRoute",
+      "apigatewayv2:GetRoute",
+      "apigatewayv2:UpdateRoute"
+    ],
+    "resource_types": []
+  },
+  "aws_api_gateway_v2_integration": {
+    "actions": [
+      "apigatewayv2:CreateIntegration",
+      "apigatewayv2:DeleteIntegration",
+      "apigatewayv2:GetIntegration",
+      "apigatewayv2:UpdateIntegration"
+    ],
+    "resource_types": []
+  },
   "aws_vpc": {
     "actions": [
       "ec2:CreateVpc",
       "ec2:DeleteVpc",
       "ec2:DescribeVpcs",
-      "ec2:ModifyVpcAttribute"
+      "ec2:ModifyVpcAttribute",
+      "ec2:CreateTags",
+      "ec2:DeleteTags"
     ],
     "resource_types": ["vpc"]
   },
@@ -193,7 +338,9 @@
       "ec2:CreateSubnet",
       "ec2:DeleteSubnet",
       "ec2:DescribeSubnets",
-      "ec2:ModifySubnetAttribute"
+      "ec2:ModifySubnetAttribute",
+      "ec2:CreateTags",
+      "ec2:DeleteTags"
     ],
     "resource_types": ["subnet"]
   },
@@ -201,7 +348,9 @@
     "actions": [
       "ec2:CreateSecurityGroup",
       "ec2:DeleteSecurityGroup",
-      "ec2:DescribeSecurityGroups"
+      "ec2:DescribeSecurityGroups",
+      "ec2:CreateTags",
+      "ec2:DeleteTags"
     ],
     "resource_types": ["security-group"]
   },
@@ -213,15 +362,26 @@
       "ec2:RevokeSecurityGroupEgress",
       "ec2:DescribeSecurityGroupRules"
     ],
-    "resource_types": []
+    "resource_types": ["security-group-rule"]
   },
   "aws_route_table": {
     "actions": [
       "ec2:CreateRouteTable",
       "ec2:DeleteRouteTable",
-      "ec2:DescribeRouteTables"
+      "ec2:DescribeRouteTables",
+      "ec2:CreateRoute",
+      "ec2:DeleteRoute",
+      "ec2:CreateTags",
+      "ec2:DeleteTags"
     ],
     "resource_types": ["route-table"]
+  },
+  "aws_route_table_association": {
+    "actions": [
+      "ec2:AssociateRouteTable",
+      "ec2:DisassociateRouteTable"
+    ],
+    "resource_types": []
   },
   "aws_internet_gateway": {
     "actions": [
@@ -229,16 +389,42 @@
       "ec2:DeleteInternetGateway",
       "ec2:DescribeInternetGateways",
       "ec2:AttachInternetGateway",
-      "ec2:DetachInternetGateway"
+      "ec2:DetachInternetGateway",
+      "ec2:CreateTags",
+      "ec2:DeleteTags"
     ],
     "resource_types": ["internet-gateway"]
+  },
+  "aws_nat_gateway": {
+    "actions": [
+      "ec2:CreateNatGateway",
+      "ec2:DeleteNatGateway",
+      "ec2:DescribeNatGateways",
+      "ec2:CreateTags",
+      "ec2:DeleteTags"
+    ],
+    "resource_types": ["nat-gateway"]
+  },
+  "aws_eip": {
+    "actions": [
+      "ec2:AllocateAddress",
+      "ec2:ReleaseAddress",
+      "ec2:DescribeAddresses",
+      "ec2:AssociateAddress",
+      "ec2:DisassociateAddress",
+      "ec2:CreateTags",
+      "ec2:DeleteTags"
+    ],
+    "resource_types": ["elastic-ip"]
   },
   "aws_sns_topic": {
     "actions": [
       "sns:CreateTopic",
       "sns:DeleteTopic",
       "sns:GetTopicAttributes",
-      "sns:SetTopicAttributes"
+      "sns:SetTopicAttributes",
+      "sns:TagResource",
+      "sns:UntagResource"
     ],
     "resource_types": ["topic"]
   },
@@ -256,7 +442,9 @@
       "sqs:CreateQueue",
       "sqs:DeleteQueue",
       "sqs:GetQueueAttributes",
-      "sqs:SetQueueAttributes"
+      "sqs:SetQueueAttributes",
+      "sqs:TagQueue",
+      "sqs:UntagQueue"
     ],
     "resource_types": ["queue"]
   },
@@ -272,7 +460,11 @@
       "dynamodb:CreateTable",
       "dynamodb:DeleteTable",
       "dynamodb:DescribeTable",
-      "dynamodb:UpdateTable"
+      "dynamodb:UpdateTable",
+      "dynamodb:UpdateContinuousBackups",
+      "dynamodb:UpdateTimeToLive",
+      "dynamodb:TagResource",
+      "dynamodb:UntagResource"
     ],
     "resource_types": ["table"]
   },
@@ -280,7 +472,10 @@
     "actions": [
       "logs:CreateLogGroup",
       "logs:DeleteLogGroup",
-      "logs:DescribeLogGroups"
+      "logs:DescribeLogGroups",
+      "logs:PutRetentionPolicy",
+      "logs:DeleteRetentionPolicy",
+      "logs:TagLogGroup"
     ],
     "resource_types": ["log-group"]
   },
@@ -288,7 +483,8 @@
     "actions": [
       "cloudwatch:PutMetricAlarm",
       "cloudwatch:DeleteAlarms",
-      "cloudwatch:DescribeAlarms"
+      "cloudwatch:DescribeAlarms",
+      "cloudwatch:TagResource"
     ],
     "resource_types": ["alarm"]
   },
@@ -297,9 +493,11 @@
       "autoscaling:CreateAutoScalingGroup",
       "autoscaling:DeleteAutoScalingGroup",
       "autoscaling:DescribeAutoScalingGroups",
-      "autoscaling:UpdateAutoScalingGroup"
+      "autoscaling:UpdateAutoScalingGroup",
+      "autoscaling:SetDesiredCapacity",
+      "autoscaling:TerminateInstanceInAutoScalingGroup"
     ],
-    "resource_types": []
+    "resource_types": ["auto-scaling-group"]
   },
   "aws_launch_configuration": {
     "actions": [
@@ -308,6 +506,16 @@
       "autoscaling:DescribeLaunchConfigurations"
     ],
     "resource_types": []
+  },
+  "aws_launch_template": {
+    "actions": [
+      "ec2:CreateLaunchTemplate",
+      "ec2:DeleteLaunchTemplate",
+      "ec2:DescribeLaunchTemplates",
+      "ec2:CreateLaunchTemplateVersion",
+      "iam:PassRole"
+    ],
+    "resource_types": ["launch-template"]
   },
   "aws_route53_zone": {
     "actions": [
@@ -331,7 +539,8 @@
       "cloudfront:CreateDistribution",
       "cloudfront:DeleteDistribution",
       "cloudfront:GetDistribution",
-      "cloudfront:UpdateDistribution"
+      "cloudfront:UpdateDistribution",
+      "cloudfront:TagResource"
     ],
     "resource_types": ["distribution"]
   },
@@ -339,7 +548,9 @@
     "actions": [
       "elasticloadbalancing:CreateLoadBalancer",
       "elasticloadbalancing:DeleteLoadBalancer",
-      "elasticloadbalancing:DescribeLoadBalancers"
+      "elasticloadbalancing:DescribeLoadBalancers",
+      "elasticloadbalancing:AddTags",
+      "elasticloadbalancing:RemoveTags"
     ],
     "resource_types": ["loadbalancer"]
   },
@@ -350,20 +561,75 @@
     ],
     "resource_types": []
   },
+  "aws_lb": {
+    "actions": [
+      "elasticloadbalancing:CreateLoadBalancer",
+      "elasticloadbalancing:DeleteLoadBalancer",
+      "elasticloadbalancing:DescribeLoadBalancers",
+      "elasticloadbalancing:ModifyLoadBalancerAttributes",
+      "elasticloadbalancing:SetSecurityGroups",
+      "elasticloadbalancing:SetSubnets",
+      "elasticloadbalancing:AddTags",
+      "elasticloadbalancing:RemoveTags"
+    ],
+    "resource_types": ["loadbalancer"]
+  },
+  "aws_lb_target_group": {
+    "actions": [
+      "elasticloadbalancing:CreateTargetGroup",
+      "elasticloadbalancing:DeleteTargetGroup",
+      "elasticloadbalancing:DescribeTargetGroups",
+      "elasticloadbalancing:ModifyTargetGroup",
+      "elasticloadbalancing:AddTags",
+      "elasticloadbalancing:RemoveTags"
+    ],
+    "resource_types": ["targetgroup"]
+  },
+  "aws_lb_listener": {
+    "actions": [
+      "elasticloadbalancing:CreateListener",
+      "elasticloadbalancing:DeleteListener",
+      "elasticloadbalancing:DescribeListeners",
+      "elasticloadbalancing:ModifyListener"
+    ],
+    "resource_types": ["listener"]
+  },
   "aws_efs_file_system": {
     "actions": [
       "elasticfilesystem:CreateFileSystem",
       "elasticfilesystem:DeleteFileSystem",
-      "elasticfilesystem:DescribeFileSystems"
+      "elasticfilesystem:DescribeFileSystems",
+      "elasticfilesystem:TagResource",
+      "elasticfilesystem:UntagResource"
     ],
     "resource_types": ["file-system"]
+  },
+  "aws_efs_mount_target": {
+    "actions": [
+      "elasticfilesystem:CreateMountTarget",
+      "elasticfilesystem:DeleteMountTarget",
+      "elasticfilesystem:DescribeMountTargets"
+    ],
+    "resource_types": []
+  },
+  "aws_efs_access_point": {
+    "actions": [
+      "elasticfilesystem:CreateAccessPoint",
+      "elasticfilesystem:DeleteAccessPoint",
+      "elasticfilesystem:DescribeAccessPoints"
+    ],
+    "resource_types": []
   },
   "aws_secretsmanager_secret": {
     "actions": [
       "secretsmanager:CreateSecret",
       "secretsmanager:DeleteSecret",
       "secretsmanager:DescribeSecret",
-      "secretsmanager:UpdateSecret"
+      "secretsmanager:UpdateSecret",
+      "secretsmanager:PutSecretValue",
+      "secretsmanager:GetSecretValue",
+      "secretsmanager:TagResource",
+      "secretsmanager:UntagResource"
     ],
     "resource_types": ["secret"]
   },
@@ -372,7 +638,14 @@
       "kms:CreateKey",
       "kms:DeleteKey",
       "kms:DescribeKey",
-      "kms:GetKeyPolicy"
+      "kms:GetKeyPolicy",
+      "kms:PutKeyPolicy",
+      "kms:EnableKeyRotation",
+      "kms:DisableKeyRotation",
+      "kms:ScheduleKeyDeletion",
+      "kms:CancelKeyDeletion",
+      "kms:TagResource",
+      "kms:UntagResource"
     ],
     "resource_types": ["key"]
   },
@@ -384,65 +657,23 @@
     ],
     "resource_types": []
   },
-  "aws_lb": {
-    "actions": [
-      "elasticloadbalancing:CreateLoadBalancer",
-      "elasticloadbalancing:DeleteLoadBalancer",
-      "elasticloadbalancing:DescribeLoadBalancers",
-      "elasticloadbalancing:ModifyLoadBalancerAttributes"
-    ],
-    "resource_types": ["loadbalancer"]
-  },
-  "aws_lb_target_group": {
-    "actions": [
-      "elasticloadbalancing:CreateTargetGroup",
-      "elasticloadbalancing:DeleteTargetGroup",
-      "elasticloadbalancing:DescribeTargetGroups",
-      "elasticloadbalancing:ModifyTargetGroup"
-    ],
-    "resource_types": []
-  },
-  "aws_lb_listener": {
-    "actions": [
-      "elasticloadbalancing:CreateListener",
-      "elasticloadbalancing:DeleteListener",
-      "elasticloadbalancing:DescribeListeners",
-      "elasticloadbalancing:ModifyListener"
-    ],
-    "resource_types": []
-  },
-  "aws_nat_gateway": {
-    "actions": [
-      "ec2:CreateNatGateway",
-      "ec2:DeleteNatGateway",
-      "ec2:DescribeNatGateways"
-    ],
-    "resource_types": ["nat-gateway"]
-  },
-  "aws_eip": {
-    "actions": [
-      "ec2:AllocateAddress",
-      "ec2:ReleaseAddress",
-      "ec2:DescribeAddresses",
-      "ec2:AssociateAddress",
-      "ec2:DisassociateAddress"
-    ],
-    "resource_types": ["elastic-ip"]
-  },
   "aws_ecr_repository": {
     "actions": [
       "ecr:CreateRepository",
       "ecr:DeleteRepository",
       "ecr:DescribeRepositories",
       "ecr:GetRepositoryPolicy",
-      "ecr:PutImageTagMutability"
+      "ecr:SetRepositoryPolicy",
+      "ecr:PutImageTagMutability",
+      "ecr:TagResource"
     ],
     "resource_types": ["repository"]
   },
   "aws_ecr_lifecycle_policy": {
     "actions": [
       "ecr:PutLifecyclePolicy",
-      "ecr:GetLifecyclePolicy"
+      "ecr:GetLifecyclePolicy",
+      "ecr:DeleteLifecyclePolicy"
     ],
     "resource_types": []
   },
@@ -451,7 +682,8 @@
       "ecs:CreateCluster",
       "ecs:DeleteCluster",
       "ecs:DescribeClusters",
-      "ecs:UpdateCluster"
+      "ecs:UpdateCluster",
+      "ecs:TagResource"
     ],
     "resource_types": ["cluster"]
   },
@@ -460,17 +692,23 @@
       "ecs:CreateService",
       "ecs:DeleteService",
       "ecs:DescribeServices",
-      "ecs:UpdateService"
+      "ecs:UpdateService",
+      "ecs:DescribeTasks",
+      "ecs:ListTasks",
+      "ecs:TagResource",
+      "iam:PassRole"
     ],
-    "resource_types": []
+    "resource_types": ["service"]
   },
   "aws_ecs_task_definition": {
     "actions": [
       "ecs:RegisterTaskDefinition",
       "ecs:DeregisterTaskDefinition",
-      "ecs:DescribeTaskDefinition"
+      "ecs:DescribeTaskDefinition",
+      "ecs:TagResource",
+      "iam:PassRole"
     ],
-    "resource_types": []
+    "resource_types": ["task-definition"]
   },
   "aws_appautoscaling_target": {
     "actions": [
@@ -493,7 +731,10 @@
       "eks:CreateCluster",
       "eks:DeleteCluster",
       "eks:DescribeCluster",
-      "eks:UpdateClusterVersion"
+      "eks:UpdateClusterVersion",
+      "eks:UpdateClusterConfig",
+      "eks:TagResource",
+      "iam:PassRole"
     ],
     "resource_types": ["cluster"]
   },
@@ -502,16 +743,21 @@
       "eks:CreateNodegroup",
       "eks:DeleteNodegroup",
       "eks:DescribeNodegroup",
-      "eks:UpdateNodegroupConfig"
+      "eks:UpdateNodegroupConfig",
+      "eks:UpdateNodegroupVersion",
+      "eks:TagResource",
+      "iam:PassRole"
     ],
-    "resource_types": []
+    "resource_types": ["nodegroup"]
   },
   "aws_ec2_transit_gateway": {
     "actions": [
       "ec2:CreateTransitGateway",
       "ec2:DeleteTransitGateway",
       "ec2:DescribeTransitGateways",
-      "ec2:ModifyTransitGateway"
+      "ec2:ModifyTransitGateway",
+      "ec2:CreateTags",
+      "ec2:DeleteTags"
     ],
     "resource_types": ["transit-gateway"]
   },
@@ -520,40 +766,9 @@
       "ec2:CreateTransitGatewayVpcAttachment",
       "ec2:DeleteTransitGatewayVpcAttachment",
       "ec2:DescribeTransitGatewayVpcAttachments",
-      "ec2:ModifyTransitGatewayVpcAttachment"
-    ],
-    "resource_types": []
-  },
-  "aws_api_gateway_v2_api": {
-    "actions": [
-      "apigateway:CreateApi",
-      "apigateway:DeleteApi",
-      "apigateway:GetApi"
-    ],
-    "resource_types": ["api"]
-  },
-  "aws_api_gateway_v2_route": {
-    "actions": [
-      "apigateway:CreateRoute",
-      "apigateway:DeleteRoute",
-      "apigateway:GetRoute"
-    ],
-    "resource_types": []
-  },
-  "aws_api_gateway_v2_integration": {
-    "actions": [
-      "apigateway:CreateIntegration",
-      "apigateway:DeleteIntegration",
-      "apigateway:GetIntegration"
-    ],
-    "resource_types": []
-  },
-  "aws_api_gateway_stage": {
-    "actions": [
-      "apigateway:CreateStage",
-      "apigateway:DeleteStage",
-      "apigateway:UpdateStage",
-      "apigateway:GetStage"
+      "ec2:ModifyTransitGatewayVpcAttachment",
+      "ec2:CreateTags",
+      "ec2:DeleteTags"
     ],
     "resource_types": []
   },
@@ -561,14 +776,16 @@
     "actions": [
       "events:PutRule",
       "events:DeleteRule",
-      "events:DescribeRule"
+      "events:DescribeRule",
+      "events:TagResource"
     ],
     "resource_types": ["rule"]
   },
   "aws_cloudwatch_event_target": {
     "actions": [
       "events:PutTargets",
-      "events:RemoveTargets"
+      "events:RemoveTargets",
+      "iam:PassRole"
     ],
     "resource_types": []
   },
@@ -576,59 +793,16 @@
     "actions": [
       "events:PutRule",
       "events:DeleteRule",
-      "events:DescribeRule"
+      "events:DescribeRule",
+      "events:TagResource"
     ],
     "resource_types": ["rule"]
   },
   "aws_eventbridge_target": {
     "actions": [
       "events:PutTargets",
-      "events:RemoveTargets"
-    ],
-    "resource_types": []
-  },
-  "aws_s3_bucket_notification": {
-    "actions": [
-      "s3:PutBucketNotification",
-      "s3:GetBucketNotification"
-    ],
-    "resource_types": []
-  },
-  "aws_s3_bucket_cors": {
-    "actions": [
-      "s3:PutBucketCors",
-      "s3:GetBucketCors",
-      "s3:DeleteBucketCors"
-    ],
-    "resource_types": []
-  },
-  "aws_s3_bucket_lifecycle_configuration": {
-    "actions": [
-      "s3:PutBucketLifecycle",
-      "s3:GetBucketLifecycle"
-    ],
-    "resource_types": []
-  },
-  "aws_s3_bucket_logging": {
-    "actions": [
-      "s3:PutBucketLogging",
-      "s3:GetBucketLogging"
-    ],
-    "resource_types": []
-  },
-  "aws_s3_bucket_object": {
-    "actions": [
-      "s3:PutObject",
-      "s3:GetObject",
-      "s3:DeleteObject",
-      "s3:ListBucket"
-    ],
-    "resource_types": []
-  },
-  "aws_s3_bucket_server_side_encryption_configuration": {
-    "actions": [
-      "s3:PutBucketEncryption",
-      "s3:GetBucketEncryption"
+      "events:RemoveTargets",
+      "iam:PassRole"
     ],
     "resource_types": []
   },
@@ -637,7 +811,9 @@
       "codepipeline:CreatePipeline",
       "codepipeline:DeletePipeline",
       "codepipeline:GetPipeline",
-      "codepipeline:UpdatePipeline"
+      "codepipeline:UpdatePipeline",
+      "codepipeline:TagResource",
+      "iam:PassRole"
     ],
     "resource_types": ["pipeline"]
   },
@@ -645,7 +821,8 @@
     "actions": [
       "codedeploy:CreateApplication",
       "codedeploy:DeleteApplication",
-      "codedeploy:GetApplication"
+      "codedeploy:GetApplication",
+      "codedeploy:TagResource"
     ],
     "resource_types": ["application"]
   },
@@ -653,16 +830,19 @@
     "actions": [
       "codedeploy:CreateDeploymentGroup",
       "codedeploy:DeleteDeploymentGroup",
-      "codedeploy:GetDeploymentGroup"
+      "codedeploy:GetDeploymentGroup",
+      "codedeploy:UpdateDeploymentGroup"
     ],
-    "resource_types": []
+    "resource_types": ["deploymentgroup"]
   },
   "aws_codebuild_project": {
     "actions": [
       "codebuild:CreateProject",
       "codebuild:DeleteProject",
       "codebuild:GetProject",
-      "codebuild:UpdateProject"
+      "codebuild:UpdateProject",
+      "codebuild:TagResource",
+      "iam:PassRole"
     ],
     "resource_types": ["project"]
   },
@@ -671,7 +851,8 @@
       "codecommit:CreateRepository",
       "codecommit:DeleteRepository",
       "codecommit:GetRepository",
-      "codecommit:UpdateRepository"
+      "codecommit:UpdateRepository",
+      "codecommit:TagResource"
     ],
     "resource_types": ["repository"]
   },
@@ -682,7 +863,7 @@
       "glue:GetDatabase",
       "glue:UpdateDatabase"
     ],
-    "resource_types": []
+    "resource_types": ["database"]
   },
   "aws_glue_catalog_table": {
     "actions": [
@@ -691,7 +872,7 @@
       "glue:GetTable",
       "glue:UpdateTable"
     ],
-    "resource_types": []
+    "resource_types": ["table"]
   },
   "aws_glue_crawler": {
     "actions": [
@@ -707,7 +888,8 @@
       "glue:CreateJob",
       "glue:DeleteJob",
       "glue:GetJob",
-      "glue:UpdateJob"
+      "glue:UpdateJob",
+      "iam:PassRole"
     ],
     "resource_types": ["job"]
   },
@@ -716,7 +898,10 @@
       "redshift:CreateCluster",
       "redshift:DeleteCluster",
       "redshift:DescribeClusters",
-      "redshift:ModifyCluster"
+      "redshift:ModifyCluster",
+      "redshift:CreateTags",
+      "redshift:DeleteTags",
+      "iam:PassRole"
     ],
     "resource_types": ["cluster"]
   },
@@ -733,7 +918,9 @@
       "elasticache:CreateCacheCluster",
       "elasticache:DeleteCacheCluster",
       "elasticache:DescribeCacheClusters",
-      "elasticache:ModifyCacheCluster"
+      "elasticache:ModifyCacheCluster",
+      "elasticache:AddTagsToResource",
+      "elasticache:RemoveTagsFromResource"
     ],
     "resource_types": ["cluster"]
   },
@@ -742,7 +929,9 @@
       "elasticache:CreateReplicationGroup",
       "elasticache:DeleteReplicationGroup",
       "elasticache:DescribeReplicationGroups",
-      "elasticache:ModifyReplicationGroup"
+      "elasticache:ModifyReplicationGroup",
+      "elasticache:AddTagsToResource",
+      "elasticache:RemoveTagsFromResource"
     ],
     "resource_types": []
   },
@@ -751,7 +940,9 @@
       "es:CreateElasticsearchDomain",
       "es:DeleteElasticsearchDomain",
       "es:DescribeElasticsearchDomain",
-      "es:UpdateElasticsearchDomainConfig"
+      "es:UpdateElasticsearchDomainConfig",
+      "es:AddTags",
+      "es:RemoveTags"
     ],
     "resource_types": ["domain"]
   },
@@ -760,7 +951,9 @@
       "es:CreateElasticsearchDomain",
       "es:DeleteElasticsearchDomain",
       "es:DescribeElasticsearchDomain",
-      "es:UpdateElasticsearchDomainConfig"
+      "es:UpdateElasticsearchDomainConfig",
+      "es:AddTags",
+      "es:RemoveTags"
     ],
     "resource_types": ["domain"]
   },
@@ -769,41 +962,39 @@
       "rds:CreateDBCluster",
       "rds:DeleteDBCluster",
       "rds:DescribeDBClusters",
-      "rds:ModifyDBCluster"
+      "rds:ModifyDBCluster",
+      "rds:AddTagsToResource",
+      "rds:ListTagsForResource"
     ],
     "resource_types": ["cluster"]
+  },
+  "aws_docdb_subnet_group": {
+    "actions": [
+      "rds:CreateDBSubnetGroup",
+      "rds:DeleteDBSubnetGroup",
+      "rds:DescribeDBSubnetGroups"
+    ],
+    "resource_types": []
   },
   "aws_neptune_cluster": {
     "actions": [
       "rds:CreateDBCluster",
       "rds:DeleteDBCluster",
       "rds:DescribeDBClusters",
-      "rds:ModifyDBCluster"
+      "rds:ModifyDBCluster",
+      "rds:AddTagsToResource",
+      "rds:ListTagsForResource"
     ],
     "resource_types": ["cluster"]
-  },
-  "aws_efs_mount_target": {
-    "actions": [
-      "elasticfilesystem:CreateMountTarget",
-      "elasticfilesystem:DeleteMountTarget",
-      "elasticfilesystem:DescribeMountTargets"
-    ],
-    "resource_types": []
-  },
-  "aws_efs_access_point": {
-    "actions": [
-      "elasticfilesystem:CreateAccessPoint",
-      "elasticfilesystem:DeleteAccessPoint",
-      "elasticfilesystem:DescribeAccessPoints"
-    ],
-    "resource_types": []
   },
   "aws_kinesis_stream": {
     "actions": [
       "kinesis:CreateStream",
       "kinesis:DeleteStream",
       "kinesis:DescribeStream",
-      "kinesis:UpdateShardCount"
+      "kinesis:UpdateShardCount",
+      "kinesis:AddTagsToStream",
+      "kinesis:RemoveTagsFromStream"
     ],
     "resource_types": ["stream"]
   },
@@ -812,7 +1003,9 @@
       "firehose:CreateDeliveryStream",
       "firehose:DeleteDeliveryStream",
       "firehose:DescribeDeliveryStream",
-      "firehose:UpdateDestination"
+      "firehose:UpdateDestination",
+      "firehose:TagDeliveryStream",
+      "iam:PassRole"
     ],
     "resource_types": ["deliverystream"]
   },
@@ -820,15 +1013,17 @@
     "actions": [
       "athena:CreateWorkGroup",
       "athena:DeleteWorkGroup",
-      "athena:GetWorkGroup"
+      "athena:GetWorkGroup",
+      "athena:UpdateWorkGroup",
+      "athena:TagResource"
     ],
-    "resource_types": []
+    "resource_types": ["workgroup"]
   },
   "aws_athena_database": {
     "actions": [
-      "glue:CreateDatabase",
-      "glue:DeleteDatabase",
-      "glue:GetDatabase"
+      "athena:CreateDatabase",
+      "athena:DeleteDatabase",
+      "athena:GetDatabase"
     ],
     "resource_types": []
   },
@@ -845,7 +1040,8 @@
       "datasync:CreateTask",
       "datasync:DeleteTask",
       "datasync:DescribeTask",
-      "datasync:UpdateTask"
+      "datasync:UpdateTask",
+      "datasync:TagResource"
     ],
     "resource_types": ["task"]
   },
@@ -853,7 +1049,8 @@
     "actions": [
       "backup:CreateBackupVault",
       "backup:DeleteBackupVault",
-      "backup:DescribeBackupVault"
+      "backup:DescribeBackupVault",
+      "backup:TagResource"
     ],
     "resource_types": ["backup-vault"]
   },
@@ -861,7 +1058,9 @@
     "actions": [
       "backup:CreateBackupPlan",
       "backup:DeleteBackupPlan",
-      "backup:GetBackupPlan"
+      "backup:GetBackupPlan",
+      "backup:UpdateBackupPlan",
+      "backup:TagResource"
     ],
     "resource_types": ["backup-plan"]
   },
@@ -870,32 +1069,38 @@
       "batch:CreateJobQueue",
       "batch:DeleteJobQueue",
       "batch:DescribeJobQueues",
-      "batch:UpdateJobQueue"
+      "batch:UpdateJobQueue",
+      "batch:TagResource"
     ],
-    "resource_types": []
+    "resource_types": ["job-queue"]
   },
   "aws_batch_compute_environment": {
     "actions": [
       "batch:CreateComputeEnvironment",
       "batch:DeleteComputeEnvironment",
       "batch:DescribeComputeEnvironments",
-      "batch:UpdateComputeEnvironment"
+      "batch:UpdateComputeEnvironment",
+      "batch:TagResource",
+      "iam:PassRole"
     ],
-    "resource_types": []
+    "resource_types": ["compute-environment"]
   },
   "aws_batch_job_definition": {
     "actions": [
       "batch:RegisterJobDefinition",
       "batch:DeregisterJobDefinition",
-      "batch:DescribeJobDefinitions"
+      "batch:DescribeJobDefinitions",
+      "batch:TagResource"
     ],
-    "resource_types": []
+    "resource_types": ["job-definition"]
   },
   "aws_guardduty_detector": {
     "actions": [
       "guardduty:CreateDetector",
       "guardduty:DeleteDetector",
-      "guardduty:GetDetector"
+      "guardduty:GetDetector",
+      "guardduty:UpdateDetector",
+      "guardduty:TagResource"
     ],
     "resource_types": ["detector"]
   },
@@ -905,7 +1110,7 @@
       "securityhub:DisableSecurityHub",
       "securityhub:GetEnabledStandards"
     ],
-    "resource_types": []
+    "resource_types": ["hub"]
   },
   "aws_inspector_assessment_target": {
     "actions": [
@@ -927,7 +1132,8 @@
     "actions": [
       "config:PutConfigurationRecorder",
       "config:DescribeConfigurationRecorders",
-      "config:DeleteConfigurationRecorder"
+      "config:DeleteConfigurationRecorder",
+      "iam:PassRole"
     ],
     "resource_types": []
   },
@@ -951,26 +1157,31 @@
     "actions": [
       "waf:CreateWebACL",
       "waf:DeleteWebACL",
-      "waf:GetWebACL"
+      "waf:GetWebACL",
+      "waf:UpdateWebACL",
+      "waf:TagResource"
     ],
-    "resource_types": []
+    "resource_types": ["webacl"]
   },
   "aws_waf_regional_web_acl": {
     "actions": [
       "waf-regional:CreateWebACL",
       "waf-regional:DeleteWebACL",
-      "waf-regional:GetWebACL"
+      "waf-regional:GetWebACL",
+      "waf-regional:UpdateWebACL",
+      "waf-regional:TagResource"
     ],
-    "resource_types": []
+    "resource_types": ["webacl"]
   },
   "aws_wafv2_web_acl": {
     "actions": [
       "wafv2:CreateWebACL",
       "wafv2:DeleteWebACL",
       "wafv2:GetWebACL",
-      "wafv2:UpdateWebACL"
+      "wafv2:UpdateWebACL",
+      "wafv2:TagResource"
     ],
-    "resource_types": []
+    "resource_types": ["webacl"]
   },
   "aws_shield_protection": {
     "actions": [
@@ -985,7 +1196,9 @@
       "ssm:CreateDocument",
       "ssm:DeleteDocument",
       "ssm:GetDocument",
-      "ssm:UpdateDocument"
+      "ssm:UpdateDocument",
+      "ssm:AddTagsToResource",
+      "ssm:RemoveTagsFromResource"
     ],
     "resource_types": ["document"]
   },
@@ -994,15 +1207,18 @@
       "ssm:PutParameter",
       "ssm:DeleteParameter",
       "ssm:GetParameter",
-      "ssm:GetParameterHistory"
+      "ssm:GetParameterHistory",
+      "ssm:AddTagsToResource",
+      "ssm:RemoveTagsFromResource"
     ],
-    "resource_types": []
+    "resource_types": ["parameter"]
   },
   "aws_ssm_maintenance_window": {
     "actions": [
       "ssm:CreateMaintenanceWindow",
       "ssm:DeleteMaintenanceWindow",
-      "ssm:GetMaintenanceWindow"
+      "ssm:GetMaintenanceWindow",
+      "ssm:UpdateMaintenanceWindow"
     ],
     "resource_types": []
   },
@@ -1018,7 +1234,9 @@
     "actions": [
       "transfer:CreateServer",
       "transfer:DeleteServer",
-      "transfer:DescribeServer"
+      "transfer:DescribeServer",
+      "transfer:UpdateServer",
+      "transfer:TagResource"
     ],
     "resource_types": ["server"]
   },
@@ -1026,7 +1244,9 @@
     "actions": [
       "transfer:CreateUser",
       "transfer:DeleteUser",
-      "transfer:DescribeUser"
+      "transfer:DescribeUser",
+      "transfer:UpdateUser",
+      "transfer:TagResource"
     ],
     "resource_types": []
   },
@@ -1035,7 +1255,9 @@
       "mq:CreateBroker",
       "mq:DeleteBroker",
       "mq:DescribeBroker",
-      "mq:UpdateBroker"
+      "mq:UpdateBroker",
+      "mq:CreateTags",
+      "mq:DeleteTags"
     ],
     "resource_types": ["broker"]
   },
@@ -1043,7 +1265,8 @@
     "actions": [
       "iot:CreateThing",
       "iot:DeleteThing",
-      "iot:DescribeThing"
+      "iot:DescribeThing",
+      "iot:UpdateThing"
     ],
     "resource_types": []
   },
@@ -1068,7 +1291,8 @@
     "actions": [
       "iot:CreateTopicRule",
       "iot:DeleteTopicRule",
-      "iot:GetTopicRule"
+      "iot:GetTopicRule",
+      "iot:ReplaceTopicRule"
     ],
     "resource_types": []
   },
@@ -1078,13 +1302,14 @@
       "mobiletargeting:DeleteApp",
       "mobiletargeting:GetApp"
     ],
-    "resource_types": []
+    "resource_types": ["apps"]
   },
   "aws_media_convert_queue": {
     "actions": [
       "mediaconvert:CreateQueue",
       "mediaconvert:DeleteQueue",
-      "mediaconvert:GetQueue"
+      "mediaconvert:GetQueue",
+      "mediaconvert:UpdateQueue"
     ],
     "resource_types": ["queue"]
   },
@@ -1102,13 +1327,14 @@
       "storagegateway:DeleteGateway",
       "storagegateway:DescribeGatewayInformation"
     ],
-    "resource_types": []
+    "resource_types": ["gateway"]
   },
   "aws_service_discovery_service": {
     "actions": [
       "servicediscovery:CreateService",
       "servicediscovery:DeleteService",
-      "servicediscovery:GetService"
+      "servicediscovery:GetService",
+      "servicediscovery:UpdateService"
     ],
     "resource_types": ["service"]
   },
@@ -1124,7 +1350,9 @@
     "actions": [
       "appmesh:CreateMesh",
       "appmesh:DeleteMesh",
-      "appmesh:DescribeMesh"
+      "appmesh:DescribeMesh",
+      "appmesh:UpdateMesh",
+      "appmesh:TagResource"
     ],
     "resource_types": ["mesh"]
   },
@@ -1133,33 +1361,39 @@
       "appmesh:CreateVirtualNode",
       "appmesh:DeleteVirtualNode",
       "appmesh:DescribeVirtualNode",
-      "appmesh:UpdateVirtualNode"
+      "appmesh:UpdateVirtualNode",
+      "appmesh:TagResource"
     ],
-    "resource_types": []
+    "resource_types": ["virtualNode"]
   },
   "aws_appmesh_virtual_router": {
     "actions": [
       "appmesh:CreateVirtualRouter",
       "appmesh:DeleteVirtualRouter",
       "appmesh:DescribeVirtualRouter",
-      "appmesh:UpdateVirtualRouter"
+      "appmesh:UpdateVirtualRouter",
+      "appmesh:TagResource"
     ],
-    "resource_types": []
+    "resource_types": ["virtualRouter"]
   },
   "aws_appmesh_route": {
     "actions": [
       "appmesh:CreateRoute",
       "appmesh:DeleteRoute",
       "appmesh:DescribeRoute",
-      "appmesh:UpdateRoute"
+      "appmesh:UpdateRoute",
+      "appmesh:TagResource"
     ],
-    "resource_types": []
+    "resource_types": ["route"]
   },
   "aws_step_function_state_machine": {
     "actions": [
       "states:CreateStateMachine",
       "states:DeleteStateMachine",
-      "states:DescribeStateMachine"
+      "states:DescribeStateMachine",
+      "states:UpdateStateMachine",
+      "states:TagResource",
+      "iam:PassRole"
     ],
     "resource_types": ["stateMachine"]
   },
@@ -1167,7 +1401,10 @@
     "actions": [
       "states:CreateStateMachine",
       "states:DeleteStateMachine",
-      "states:DescribeStateMachine"
+      "states:DescribeStateMachine",
+      "states:UpdateStateMachine",
+      "states:TagResource",
+      "iam:PassRole"
     ],
     "resource_types": ["stateMachine"]
   },
@@ -1175,7 +1412,9 @@
     "actions": [
       "network-firewall:CreateFirewall",
       "network-firewall:DeleteFirewall",
-      "network-firewall:DescribeFirewall"
+      "network-firewall:DescribeFirewall",
+      "network-firewall:UpdateFirewall",
+      "network-firewall:TagResource"
     ],
     "resource_types": ["firewall"]
   },
@@ -1183,31 +1422,39 @@
     "actions": [
       "network-firewall:CreateFirewallPolicy",
       "network-firewall:DeleteFirewallPolicy",
-      "network-firewall:DescribeFirewallPolicy"
+      "network-firewall:DescribeFirewallPolicy",
+      "network-firewall:UpdateFirewallPolicy",
+      "network-firewall:TagResource"
     ],
-    "resource_types": []
+    "resource_types": ["firewall-policy"]
   },
   "aws_networkfirewall_rule_group": {
     "actions": [
       "network-firewall:CreateRuleGroup",
       "network-firewall:DeleteRuleGroup",
-      "network-firewall:DescribeRuleGroup"
+      "network-firewall:DescribeRuleGroup",
+      "network-firewall:UpdateRuleGroup",
+      "network-firewall:TagResource"
     ],
-    "resource_types": []
+    "resource_types": ["rule-group"]
   },
   "aws_amplify_app": {
     "actions": [
       "amplify:CreateApp",
       "amplify:DeleteApp",
-      "amplify:GetApp"
+      "amplify:GetApp",
+      "amplify:UpdateApp",
+      "amplify:TagResource",
+      "iam:PassRole"
     ],
-    "resource_types": ["app"]
+    "resource_types": ["apps"]
   },
   "aws_amplify_branch": {
     "actions": [
       "amplify:CreateBranch",
       "amplify:DeleteBranch",
-      "amplify:GetBranch"
+      "amplify:GetBranch",
+      "amplify:UpdateBranch"
     ],
     "resource_types": []
   },
@@ -1215,15 +1462,19 @@
     "actions": [
       "appsync:CreateGraphqlApi",
       "appsync:DeleteGraphqlApi",
-      "appsync:GetGraphqlApi"
+      "appsync:GetGraphqlApi",
+      "appsync:UpdateGraphqlApi",
+      "appsync:TagResource"
     ],
-    "resource_types": ["graphql-api"]
+    "resource_types": ["apis"]
   },
   "aws_appsync_datasource": {
     "actions": [
       "appsync:CreateDataSource",
       "appsync:DeleteDataSource",
-      "appsync:GetDataSource"
+      "appsync:GetDataSource",
+      "appsync:UpdateDataSource",
+      "iam:PassRole"
     ],
     "resource_types": []
   },
@@ -1232,7 +1483,8 @@
       "cognito-idp:CreateUserPool",
       "cognito-idp:DeleteUserPool",
       "cognito-idp:DescribeUserPool",
-      "cognito-idp:UpdateUserPool"
+      "cognito-idp:UpdateUserPool",
+      "cognito-idp:TagResource"
     ],
     "resource_types": ["userpool"]
   },
@@ -1240,7 +1492,8 @@
     "actions": [
       "cognito-idp:CreateUserPoolClient",
       "cognito-idp:DeleteUserPoolClient",
-      "cognito-idp:DescribeUserPoolClient"
+      "cognito-idp:DescribeUserPoolClient",
+      "cognito-idp:UpdateUserPoolClient"
     ],
     "resource_types": []
   },
@@ -1248,7 +1501,8 @@
     "actions": [
       "cognito-identity:CreateIdentityPool",
       "cognito-identity:DeleteIdentityPool",
-      "cognito-identity:DescribeIdentityPool"
+      "cognito-identity:DescribeIdentityPool",
+      "cognito-identity:UpdateIdentityPool"
     ],
     "resource_types": ["identitypool"]
   },
@@ -1256,7 +1510,9 @@
     "actions": [
       "fsx:CreateFileSystem",
       "fsx:DeleteFileSystem",
-      "fsx:DescribeFileSystems"
+      "fsx:DescribeFileSystems",
+      "fsx:UpdateFileSystem",
+      "fsx:TagResource"
     ],
     "resource_types": ["file-system"]
   },
@@ -1264,7 +1520,9 @@
     "actions": [
       "fsx:CreateFileSystem",
       "fsx:DeleteFileSystem",
-      "fsx:DescribeFileSystems"
+      "fsx:DescribeFileSystems",
+      "fsx:UpdateFileSystem",
+      "fsx:TagResource"
     ],
     "resource_types": ["file-system"]
   },
@@ -1272,7 +1530,9 @@
     "actions": [
       "qldb:CreateLedger",
       "qldb:DeleteLedger",
-      "qldb:DescribeLedger"
+      "qldb:DescribeLedger",
+      "qldb:UpdateLedger",
+      "qldb:TagResource"
     ],
     "resource_types": ["ledger"]
   },
@@ -1280,7 +1540,9 @@
     "actions": [
       "timestream:CreateDatabase",
       "timestream:DeleteDatabase",
-      "timestream:DescribeDatabase"
+      "timestream:DescribeDatabase",
+      "timestream:UpdateDatabase",
+      "timestream:TagResource"
     ],
     "resource_types": ["database"]
   },
@@ -1288,7 +1550,9 @@
     "actions": [
       "timestream:CreateTable",
       "timestream:DeleteTable",
-      "timestream:DescribeTable"
+      "timestream:DescribeTable",
+      "timestream:UpdateTable",
+      "timestream:TagResource"
     ],
     "resource_types": ["table"]
   },
@@ -1296,9 +1560,147 @@
     "actions": [
       "memorydb:CreateCluster",
       "memorydb:DeleteCluster",
-      "memorydb:DescribeClusters"
+      "memorydb:DescribeClusters",
+      "memorydb:UpdateCluster",
+      "memorydb:TagResource"
     ],
     "resource_types": ["cluster"]
+  },
+
+  "data.aws_caller_identity": {
+    "actions": ["sts:GetCallerIdentity"],
+    "resource_types": []
+  },
+  "data.aws_region": {
+    "actions": ["ec2:DescribeRegions"],
+    "resource_types": []
+  },
+  "data.aws_availability_zones": {
+    "actions": ["ec2:DescribeAvailabilityZones"],
+    "resource_types": []
+  },
+  "data.aws_iam_role": {
+    "actions": ["iam:GetRole"],
+    "resource_types": ["role"]
+  },
+  "data.aws_iam_policy": {
+    "actions": ["iam:GetPolicy", "iam:ListPolicyVersions"],
+    "resource_types": ["policy"]
+  },
+  "data.aws_iam_policy_document": {
+    "actions": [],
+    "resource_types": []
+  },
+  "data.aws_ssm_parameter": {
+    "actions": ["ssm:GetParameter", "ssm:GetParameterHistory"],
+    "resource_types": ["parameter"]
+  },
+  "data.aws_ami": {
+    "actions": ["ec2:DescribeImages"],
+    "resource_types": []
+  },
+  "data.aws_kms_key": {
+    "actions": ["kms:DescribeKey", "kms:GetKeyPolicy"],
+    "resource_types": ["key"]
+  },
+  "data.aws_kms_secrets": {
+    "actions": ["kms:Decrypt"],
+    "resource_types": []
+  },
+  "data.aws_secretsmanager_secret": {
+    "actions": ["secretsmanager:DescribeSecret", "secretsmanager:GetSecretValue"],
+    "resource_types": ["secret"]
+  },
+  "data.aws_s3_bucket": {
+    "actions": ["s3:GetBucketLocation", "s3:ListBucket"],
+    "resource_types": ["bucket"]
+  },
+  "data.aws_s3_bucket_object": {
+    "actions": ["s3:GetObject"],
+    "resource_types": []
+  },
+  "data.aws_vpc": {
+    "actions": ["ec2:DescribeVpcs"],
+    "resource_types": ["vpc"]
+  },
+  "data.aws_subnet": {
+    "actions": ["ec2:DescribeSubnets"],
+    "resource_types": ["subnet"]
+  },
+  "data.aws_subnet_ids": {
+    "actions": ["ec2:DescribeSubnets"],
+    "resource_types": []
+  },
+  "data.aws_security_group": {
+    "actions": ["ec2:DescribeSecurityGroups"],
+    "resource_types": ["security-group"]
+  },
+  "data.aws_route53_zone": {
+    "actions": ["route53:GetHostedZone", "route53:ListHostedZones"],
+    "resource_types": ["hostedzone"]
+  },
+  "data.aws_lambda_function": {
+    "actions": ["lambda:GetFunction"],
+    "resource_types": ["function"]
+  },
+  "data.aws_sns_topic": {
+    "actions": ["sns:GetTopicAttributes"],
+    "resource_types": ["topic"]
+  },
+  "data.aws_sqs_queue": {
+    "actions": ["sqs:GetQueueAttributes"],
+    "resource_types": ["queue"]
+  },
+  "data.aws_dynamodb_table": {
+    "actions": ["dynamodb:DescribeTable"],
+    "resource_types": ["table"]
+  },
+  "data.aws_ecr_repository": {
+    "actions": ["ecr:DescribeRepositories"],
+    "resource_types": ["repository"]
+  },
+  "data.aws_ecs_cluster": {
+    "actions": ["ecs:DescribeClusters"],
+    "resource_types": ["cluster"]
+  },
+  "data.aws_eks_cluster": {
+    "actions": ["eks:DescribeCluster"],
+    "resource_types": ["cluster"]
+  },
+  "data.aws_cloudwatch_log_group": {
+    "actions": ["logs:DescribeLogGroups"],
+    "resource_types": ["log-group"]
+  },
+  "data.aws_rds_cluster": {
+    "actions": ["rds:DescribeDBClusters"],
+    "resource_types": ["cluster"]
+  },
+  "data.aws_elasticache_cluster": {
+    "actions": ["elasticache:DescribeCacheClusters"],
+    "resource_types": ["cluster"]
+  },
+  "data.aws_efs_file_system": {
+    "actions": ["elasticfilesystem:DescribeFileSystems"],
+    "resource_types": ["file-system"]
+  },
+  "data.aws_cloudfront_distribution": {
+    "actions": ["cloudfront:GetDistribution"],
+    "resource_types": ["distribution"]
+  },
+  "data.aws_elb": {
+    "actions": ["elasticloadbalancing:DescribeLoadBalancers"],
+    "resource_types": ["loadbalancer"]
+  },
+  "data.aws_lb": {
+    "actions": ["elasticloadbalancing:DescribeLoadBalancers"],
+    "resource_types": ["loadbalancer"]
+  },
+  "data.aws_lb_target_group": {
+    "actions": ["elasticloadbalancing:DescribeTargetGroups"],
+    "resource_types": ["targetgroup"]
+  },
+  "data.aws_autoscaling_group": {
+    "actions": ["autoscaling:DescribeAutoScalingGroups"],
+    "resource_types": ["auto-scaling-group"]
   }
 }
-

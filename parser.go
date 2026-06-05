@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -11,6 +12,9 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/zclconf/go-cty/cty"
 )
+
+//go:embed permissions.json
+var embeddedPermissionsDB []byte
 
 // Resource represents a Terraform resource or data source
 type Resource struct {
@@ -29,9 +33,11 @@ type BackendConfig struct {
 
 // ParseResult contains all parsed information
 type ParseResult struct {
-	Resources     []Resource
-	Backend       *BackendConfig
-	DataSources   []Resource
+	Resources   []Resource
+	Backend     *BackendConfig
+	DataSources []Resource
+	Modules     []string // local module source paths found during parsing
+	Warnings    []string // non-fatal issues encountered during parsing
 }
 
 // PermissionMap represents the permissions database
@@ -45,15 +51,10 @@ type ResourcePermissions struct {
 
 var permissionsDB PermissionMap
 
-// loadPermissionsDB loads the permissions database from JSON
+// loadPermissionsDB loads the permissions database from the embedded JSON
 func loadPermissionsDB() error {
-	data, err := os.ReadFile("permissions.json")
-	if err != nil {
-		return fmt.Errorf("error reading permissions.json: %w", err)
-	}
-
 	var db PermissionMap
-	if err := json.Unmarshal(data, &db); err != nil {
+	if err := json.Unmarshal(embeddedPermissionsDB, &db); err != nil {
 		return fmt.Errorf("error parsing permissions.json: %w", err)
 	}
 
@@ -61,7 +62,8 @@ func loadPermissionsDB() error {
 	return nil
 }
 
-// parseTerraformFiles scans a directory for .tf files and extracts resources
+// parseTerraformFiles scans a directory for .tf files and extracts resources.
+// It also follows local module sources recursively.
 func parseTerraformFiles(dirPath string) (*ParseResult, error) {
 	// Load permissions database
 	if permissionsDB == nil {
@@ -71,25 +73,52 @@ func parseTerraformFiles(dirPath string) (*ParseResult, error) {
 	}
 
 	result := &ParseResult{
-		Resources: []Resource{},
+		Resources:   []Resource{},
 		DataSources: []Resource{},
 	}
 
-	err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
+	// Track visited directories to avoid re-scanning modules
+	visited := make(map[string]bool)
+	scanDir(dirPath, result, visited)
+
+	return result, nil
+}
+
+// scanDir recursively scans a directory and follows local module sources.
+func scanDir(dirPath string, result *ParseResult, visited map[string]bool) {
+	absPath, err := filepath.Abs(dirPath)
+	if err != nil {
+		result.Warnings = append(result.Warnings,
+			fmt.Sprintf("Could not resolve path %s: %v", dirPath, err))
+		return
+	}
+
+	cleanPath := filepath.Clean(absPath)
+	if visited[cleanPath] {
+		return
+	}
+	visited[cleanPath] = true
+
+	filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
-			return err
+			result.Warnings = append(result.Warnings,
+				fmt.Sprintf("Error accessing %s: %v", path, err))
+			return nil
 		}
 
-		// Only process .tf files
-		if strings.HasSuffix(info.Name(), ".tf") {
-			fileResult, err := parseTerraformFile(path)
-			if err != nil {
-				return fmt.Errorf("error parsing %s: %w", path, err)
+		// Only process .tf files (skip .terraform directory)
+		if strings.HasSuffix(info.Name(), ".tf") && !strings.Contains(path, "/.terraform/") {
+			fileResult, fileErr := parseTerraformFile(path)
+			if fileErr != nil {
+				result.Warnings = append(result.Warnings,
+					fmt.Sprintf("Error parsing %s: %v", path, fileErr))
+				return nil
 			}
-			
+
 			result.Resources = append(result.Resources, fileResult.Resources...)
 			result.DataSources = append(result.DataSources, fileResult.DataSources...)
-			
+			result.Modules = append(result.Modules, fileResult.Modules...)
+
 			if fileResult.Backend != nil && result.Backend == nil {
 				result.Backend = fileResult.Backend
 			}
@@ -97,8 +126,8 @@ func parseTerraformFiles(dirPath string) (*ParseResult, error) {
 
 		// Check for terraform.tfstate files for backend detection
 		if info.Name() == "terraform.tfstate" || strings.HasSuffix(info.Name(), ".tfstate") {
-			backendInfo, err := extractBackendFromState(path)
-			if err == nil && backendInfo != nil {
+			backendInfo, backendErr := extractBackendFromState(path)
+			if backendErr == nil && backendInfo != nil {
 				result.Backend = backendInfo
 			}
 		}
@@ -106,7 +135,19 @@ func parseTerraformFiles(dirPath string) (*ParseResult, error) {
 		return nil
 	})
 
-	return result, err
+	// Follow local module sources found in this directory
+	for _, moduleSource := range result.Modules {
+		if isLocalModuleSource(moduleSource) {
+			modulePath := filepath.Join(dirPath, moduleSource)
+			scanDir(modulePath, result, visited)
+		}
+	}
+}
+
+// isLocalModuleSource returns true if the module source is a local path.
+func isLocalModuleSource(source string) bool {
+	return strings.HasPrefix(source, "./") || strings.HasPrefix(source, "../") ||
+		(strings.HasPrefix(source, "/") && !strings.Contains(source, "//"))
 }
 
 // parseTerraformFile parses a single Terraform file using HCL v2
@@ -117,7 +158,7 @@ func parseTerraformFile(filePath string) (*ParseResult, error) {
 	}
 
 	result := &ParseResult{
-		Resources: []Resource{},
+		Resources:   []Resource{},
 		DataSources: []Resource{},
 	}
 
@@ -147,11 +188,32 @@ func parseTerraformFile(filePath string) (*ParseResult, error) {
 				if backend != nil {
 					result.Backend = backend
 				}
+			case "module":
+				source := extractModuleSource(block)
+				if source != "" {
+					result.Modules = append(result.Modules, source)
+				}
 			}
 		}
 	}
 
 	return result, nil
+}
+
+// extractModuleSource extracts the source attribute from a module block.
+func extractModuleSource(block *hclsyntax.Block) string {
+	if block.Body == nil {
+		return ""
+	}
+	for name, attr := range block.Body.Attributes {
+		if name == "source" {
+			val, _ := attr.Expr.Value(nil)
+			if val.Type() == cty.String {
+				return val.AsString()
+			}
+		}
+	}
+	return ""
 }
 
 // extractResourceFromBlock extracts resource information from an HCL block
@@ -165,7 +227,7 @@ func extractResourceFromBlock(block *hclsyntax.Block) *Resource {
 
 	// Extract provider
 	provider := "aws"
-	
+
 	if strings.HasPrefix(fullType, "aws_") {
 		provider = "aws"
 	} else if strings.Contains(fullType, "_") {
@@ -183,10 +245,10 @@ func extractResourceFromBlock(block *hclsyntax.Block) *Resource {
 	}
 
 	return &Resource{
-		Type:       fullType,
-		Name:       name,
-		Provider:   provider,
-		Attributes: attributes,
+		Type:         fullType,
+		Name:         name,
+		Provider:     provider,
+		Attributes:   attributes,
 		ResourceType: fullType,
 	}
 }
@@ -201,7 +263,7 @@ func extractDataSourceFromBlock(block *hclsyntax.Block) *Resource {
 	name := block.Labels[1]
 
 	provider := "aws"
-	
+
 	if strings.HasPrefix(fullType, "aws_") {
 		provider = "aws"
 	}
@@ -218,27 +280,26 @@ func extractBackendFromBlock(block *hclsyntax.Block) *BackendConfig {
 	for _, nestedBlock := range block.Body.Blocks {
 		if nestedBlock.Type == "backend" && len(nestedBlock.Labels) > 0 {
 			config := make(map[string]string)
-			
+
 			for name, attr := range nestedBlock.Body.Attributes {
 				val, _ := attr.Expr.Value(nil)
 				if val.Type() == cty.String {
 					config[name] = val.AsString()
 				}
 			}
-			
+
 			return &BackendConfig{
 				Type:   nestedBlock.Labels[0],
 				Config: config,
 			}
 		}
 	}
-	
+
 	return nil
 }
 
 // extractBackendFromState attempts to extract backend info from state file
 func extractBackendFromState(filePath string) (*BackendConfig, error) {
-	// This is a simplified extractor - full implementation would parse JSON properly
 	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, err
@@ -258,7 +319,7 @@ func extractBackendFromState(filePath string) (*BackendConfig, error) {
 // extractWithSimpleParsing is a fallback parser when HCL parsing fails
 func extractWithSimpleParsing(content []byte, filePath string) (*ParseResult, error) {
 	result := &ParseResult{
-		Resources: []Resource{},
+		Resources:   []Resource{},
 		DataSources: []Resource{},
 	}
 
@@ -316,6 +377,25 @@ func extractWithSimpleParsing(content []byte, filePath string) (*ParseResult, er
 					Provider:     provider,
 					ResourceType: resourceType,
 				})
+			}
+		} else if strings.HasPrefix(trimmed, "module \"") {
+			currentBlock = "module"
+			// Simple source extraction from module block
+			parts := strings.Fields(trimmed)
+			if len(parts) >= 2 {
+				currentName = strings.Trim(parts[1], "\"")
+			}
+		}
+
+		// Check for module source attribute
+		if currentBlock == "module" && strings.Contains(trimmed, "source") {
+			parts := strings.SplitN(trimmed, "=", 2)
+			if len(parts) == 2 {
+				source := strings.TrimSpace(parts[1])
+				source = strings.Trim(source, "\"")
+				if isLocalModuleSource(source) {
+					result.Modules = append(result.Modules, source)
+				}
 			}
 		}
 

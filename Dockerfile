@@ -37,10 +37,9 @@ WORKDIR /app
 
 # Copy binary from builder
 COPY --from=builder /build/tf-iam-scanner .
-COPY --from=builder /build/permissions.json .
 
 # Change ownership to non-root user
-RUN chown scanner:scanner /app/tf-iam-scanner /app/permissions.json
+RUN chown scanner:scanner /app/tf-iam-scanner
 
 # Switch to non-root user
 USER scanner

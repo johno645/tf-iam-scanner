@@ -10,11 +10,11 @@ import (
 )
 
 var (
-	pathFlag              string
-	outputFlag            string
+	pathFlag               string
+	outputFlag             string
 	includeStateBackendFlag bool
-	leastPrivilegeFlag    bool
-	formatFlag            string
+	leastPrivilegeFlag     bool
+	formatFlag             string
 )
 
 var rootCmd = &cobra.Command{
@@ -31,7 +31,7 @@ with different output formats and granularity options.`,
 func init() {
 	rootCmd.Flags().StringVarP(&pathFlag, "path", "p", ".", "Path to directory containing Terraform files")
 	rootCmd.Flags().StringVarP(&outputFlag, "output", "o", "", "Output file path for the IAM policy (default: stdout)")
-	rootCmd.Flags().BoolVar(&includeStateBackendFlag, "include-state-backend", false, "Include permissions for Terraform state backend operations")
+	rootCmd.Flags().BoolVar(&includeStateBackendFlag, "include-state-backend", true, "Include permissions for Terraform state backend operations (use --include-state-backend=false to exclude)")
 	rootCmd.Flags().BoolVar(&leastPrivilegeFlag, "least-privilege", false, "Generate separate statements per service with specific resource ARNs")
 	rootCmd.Flags().StringVarP(&formatFlag, "format", "f", "json", "Output format (json, yaml, terraform)")
 }
@@ -53,7 +53,7 @@ func runScanner(cmd *cobra.Command, args []string) {
 	// Parse format
 	format := OutputFormat(formatFlag)
 
-	// Parse Terraform files
+	// Parse Terraform files (with module resolution)
 	result, err := parseTerraformFiles(pathFlag)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error parsing Terraform files: %v\n", err)
@@ -87,43 +87,69 @@ func runScanner(cmd *cobra.Command, args []string) {
 	fmt.Fprintf(os.Stderr, "\nSummary:\n")
 	fmt.Fprintf(os.Stderr, "  Resources found: %d\n", len(result.Resources))
 	fmt.Fprintf(os.Stderr, "  Data sources found: %d\n", len(result.DataSources))
-	
+
 	if result.Backend != nil {
 		fmt.Fprintf(os.Stderr, "  Backend detected: %s\n", result.Backend.Type)
-		if !includeStateBackendFlag {
-			fmt.Fprintf(os.Stderr, "  Hint: Use --include-state-backend to add backend permissions\n")
+		if includeStateBackendFlag {
+			fmt.Fprintf(os.Stderr, "  State backend permissions: included\n")
+		} else {
+			fmt.Fprintf(os.Stderr, "  State backend permissions: excluded (use --include-state-backend to include)\n")
 		}
 	}
-	
+
 	if leastPrivilegeFlag {
-		services := extractServicesFromPolicy(policy)
+		services := extractServicesFromResult(result, includeStateBackendFlag)
 		fmt.Fprintf(os.Stderr, "  Services requiring permissions: %s\n", strings.Join(services, ", "))
 	}
 }
 
-func extractServicesFromPolicy(policy string) []string {
+// extractServicesFromResult extracts distinct AWS service names from the parsed result.
+func extractServicesFromResult(result *ParseResult, includeBackend bool) []string {
 	services := make(map[string]bool)
-	
-	// Extract service names from the policy output
-	lines := strings.Split(policy, "\n")
-	for _, line := range lines {
-		if strings.Contains(line, ":") && !strings.Contains(line, "arn:") {
-			parts := strings.Split(line, ":")
-			if len(parts) >= 2 {
-				service := strings.TrimSpace(parts[0])
-				service = strings.Trim(service, "\"[],")
-				services[service] = true
+
+	for _, resource := range result.Resources {
+		if resource.Provider == "aws" {
+			perms := getRequiredPermissions(resource.Type)
+			for _, action := range perms {
+				parts := strings.Split(action, ":")
+				if len(parts) == 2 {
+					services[parts[0]] = true
+				}
 			}
 		}
 	}
-	
-	result := []string{}
-	for service := range services {
-		result = append(result, service)
+
+	for _, ds := range result.DataSources {
+		if ds.Provider == "aws" {
+			dataSourceKey := "data." + ds.Type
+			perms := getRequiredPermissions(dataSourceKey)
+			if len(perms) == 0 {
+				perms = getRequiredPermissions(ds.Type)
+			}
+			for _, action := range perms {
+				if isReadOnlyAction(action) {
+					parts := strings.Split(action, ":")
+					if len(parts) == 2 {
+						services[parts[0]] = true
+					}
+				}
+			}
+		}
 	}
-	sort.Strings(result)
-	
-	return result
+
+	if includeBackend {
+		services["s3"] = true
+		services["dynamodb"] = true
+	}
+	services["sts"] = true
+
+	serviceList := make([]string, 0, len(services))
+	for service := range services {
+		serviceList = append(serviceList, service)
+	}
+	sort.Strings(serviceList)
+
+	return serviceList
 }
 
 func main() {
