@@ -50,3 +50,4 @@ push-to-github.sh
 *.bak
 *.tmp
 
+policy.tf
